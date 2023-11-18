@@ -26,6 +26,8 @@ const initialState = {
 };
 
 function reducer(state, action) {
+  if (!state.isActive && action.type !== "openAccount") return state;
+
   console.log(state, action);
   switch (action.type) {
     case "openAccount":
@@ -41,30 +43,21 @@ function reducer(state, action) {
         balance: state.balance ? state.balance - action.payload : state.balance,
       };
     case "requestLoan":
+      if (state.loan > 0) return state;
       return {
         ...state,
-        balance:
-          state.balance <= action.payload
-            ? state.balance + action.payload
-            : state.balance,
         loan: action.payload,
+        balance: state.balance + action.payload,
       };
     case "payLoan":
       return {
         ...state,
         loan: 0,
-        balance:
-          state.balance <= 0 ? state.balance : state.balance - action.payload,
+        balance: state.balance - state.loan,
       };
     case "closeAccount":
-      return {
-        ...state,
-        balance: 0,
-        loan: 0,
-        isActive: false,
-        deposit: 0,
-        withdraw: 0,
-      };
+      if (state.loan > 0 || state.balance !== 0) return state;
+      return initialState;
     default:
       throw new Error("Action unknown");
   }
@@ -124,7 +117,7 @@ export default function App() {
       <p>
         <button
           onClick={() => {
-            dispatch({ type: "payLoan", payload: 5000 });
+            dispatch({ type: "payLoan" });
           }}
           disabled={!isActive}
         >
